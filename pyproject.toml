@@ -11,12 +11,14 @@ requires-python = ">=3.13"
 
 dependencies = [
     "altair>=6.0.0",
+    "manim>=0.19.1",
     "marimo>=0.18.0",
     "numpy>=2.3.5",
     "openai>=2.11.0",
     "polars>=1.35.2",
     "python-lsp-server>=1.14.0",
     "ruff>=0.14.9",
+    "scipy>=1.16.3",
     "sympy>=1.14.0",
     "ty>=0.0.1a34",
 ]
