@@ -135,3 +135,8 @@ dmypy.json
 
 # pytype static analyzer
 .pytype/
+
+.DS_Store
+src/complex/frames/
+media/
+*.mp4

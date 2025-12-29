@@ -10,18 +10,32 @@ readme = "README.md"
 requires-python = ">=3.13"
 
 dependencies = [
-    "altair>=6.0.0",
-    "manim>=0.19.1",
-    "marimo>=0.18.0",
-    "numpy>=2.3.5",
-    "openai>=2.11.0",
-    "polars>=1.35.2",
-    "python-lsp-server>=1.14.0",
-    "ruff>=0.14.9",
-    "scipy>=1.16.3",
-    "sympy>=1.14.0",
+    "altair>=5.0.0",
+    "manim>=0.18.0",
+    "marimo>=0.9.0",
+    "numpy>=2.0.0",
+    "openai>=1.0.0",
+    "openpyxl>=3.1.0",
+    "polars>=1.0.0",
+    "proselint>=0.13.0",
+    "pyarrow>=22.0.0",
+    "python-lsp-server>=1.10.0",
+    "python-salsa",
+    "ruff>=0.4.0",
+    "scikit-learn>=1.5.0",
+    "scipy>=1.13.0",
+    "spacy>=3.7.0",
+    "sqlalchemy>=2.0.45",
+    "sympy>=1.13.1",
+    "torch>=2.2.0",
+    "transformers",
     "ty>=0.0.1a34",
+    "zstandard>=0.25.0",
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scratch"]
+
+[tool.uv.sources]
+torch = { path = "/Users/timwigmore-welsh/Projects/pytorch/dist/torch-2.11.0a0+git3854d69-cp313-cp313-macosx_15_0_x86_64.whl" }
+python-salsa = { path = "src/python-salsa", editable = true }
