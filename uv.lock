@@ -1897,9 +1897,13 @@ wheels = [
 name = "python-salsa"
 version = "0.1.0"
 source = { editable = "src/python-salsa" }
+dependencies = [
+    { name = "anywidget" },
+]
 
 [package.metadata]
 requires-dist = [
+    { name = "anywidget", specifier = ">=0.9.21" },
     { name = "anywidget", marker = "extra == 'viewer'", specifier = ">=0.9.0" },
     { name = "maturin", marker = "extra == 'dev'", specifier = ">=1.10.2" },
     { name = "openpyxl", marker = "extra == 'dev'", specifier = ">=3.1.5" },
@@ -1910,6 +1914,9 @@ requires-dist = [
     { name = "traitlets", marker = "extra == 'viewer'", specifier = ">=5.0.0" },
 ]
 provides-extras = ["test", "dev", "viewer"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.3.5" }]
 
 [[package]]
 name = "pytokens"
