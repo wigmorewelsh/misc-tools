@@ -143,3 +143,5 @@ dmypy.json
 src/complex/frames/
 media/
 *.mp4
+src/structured-agent/execution-slides.pdf
+.agent_sessions.db
