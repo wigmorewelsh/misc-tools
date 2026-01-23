@@ -7,6 +7,7 @@ pub mod apply_patch;
 pub mod copy_path;
 pub mod create_directory;
 pub mod execute_command;
+pub mod grep;
 pub mod list_directory;
 pub mod move_path;
 pub mod now;
@@ -15,10 +16,14 @@ pub mod search_replace_edit;
 pub mod task_complete;
 pub mod write_file;
 
+#[cfg(test)]
+mod tests;
+
 pub use apply_patch::ApplyPatchTool;
 pub use copy_path::CopyPathTool;
 pub use create_directory::CreateDirectoryTool;
 pub use execute_command::ExecuteCommandTool;
+pub use grep::GrepTool;
 pub use list_directory::ListDirectoryTool;
 pub use move_path::MovePathTool;
 pub use now::NowTool;
@@ -66,6 +71,7 @@ tool_box!(
         ReadFileTool,
         WriteFileTool,
         ExecuteCommandTool,
+        GrepTool,
         ListDirectoryTool,
         CreateDirectoryTool,
         CopyPathTool,

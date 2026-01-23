@@ -33,11 +33,12 @@ async fn test_server_list_tools() {
         .await
         .unwrap();
 
-    assert_eq!(result.tools.len(), 11);
+    assert_eq!(result.tools.len(), 12);
 
     let tool_names: Vec<&str> = result.tools.iter().map(|t| t.name.as_str()).collect();
     assert!(tool_names.contains(&"read_file"));
     assert!(tool_names.contains(&"write_file"));
+    assert!(tool_names.contains(&"grep"));
     assert!(tool_names.contains(&"execute_command"));
     assert!(tool_names.contains(&"list_directory"));
     assert!(tool_names.contains(&"create_directory"));

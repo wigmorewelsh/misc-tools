@@ -41,6 +41,7 @@ impl ServerHandler for CommonToolsHandler {
             CommonTools::ReadFileTool(tool) => tool.call_tool().await,
             CommonTools::WriteFileTool(tool) => tool.call_tool().await,
             CommonTools::ExecuteCommandTool(tool) => tool.call_tool().await,
+            CommonTools::GrepTool(tool) => tool.call_tool().await,
             CommonTools::ListDirectoryTool(tool) => tool.call_tool().await,
             CommonTools::CreateDirectoryTool(tool) => tool.call_tool().await,
             CommonTools::CopyPathTool(tool) => tool.call_tool().await,
