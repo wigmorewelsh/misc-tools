@@ -1,23 +1,15 @@
-use rust_mcp_sdk::macros::{mcp_tool, JsonSchema};
-use rust_mcp_sdk::schema::{schema_utils::CallToolError, CallToolResult, TextContent};
-use serde::{Deserialize, Serialize};
+use rmcp::model::{CallToolResult, Content};
 use std::process::Stdio;
 use tokio::process::Command;
 
 use super::ToolError;
 
-#[mcp_tool(
-    name = "execute_command",
-    description = "Execute a shell command in a terminal and return the output"
-)]
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct ExecuteCommandTool {
-    /// The command to execute
     pub command: String,
 }
 
 impl ExecuteCommandTool {
-    pub async fn call_tool(&self) -> Result<CallToolResult, CallToolError> {
+    pub async fn call_tool(&self) -> Result<CallToolResult, ToolError> {
         let mut cmd = if cfg!(target_os = "windows") {
             let mut c = Command::new("cmd");
             c.args(["/C", &self.command]);
@@ -60,8 +52,6 @@ impl ExecuteCommandTool {
             .into());
         }
 
-        Ok(CallToolResult::text_content(vec![TextContent::from(
-            result,
-        )]))
+        Ok(CallToolResult::success(vec![Content::text(result)]))
     }
 }

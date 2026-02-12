@@ -1,24 +1,15 @@
-use rust_mcp_sdk::macros::{mcp_tool, JsonSchema};
-use rust_mcp_sdk::schema::{schema_utils::CallToolError, CallToolResult, TextContent};
-use serde::{Deserialize, Serialize};
+use rmcp::model::{CallToolResult, Content};
 use tokio::fs;
 
 use super::{resolve_path, ToolError};
 
-#[mcp_tool(
-    name = "apply_patch",
-    description = "Apply a unified diff patch to a file. The patch should be in unified diff format with context lines."
-)]
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct ApplyPatchTool {
-    /// The path to the file to patch (absolute or relative to working directory)
     pub path: String,
-    /// The unified diff patch content to apply. Should include context lines for accurate matching.
     pub patch: String,
 }
 
 impl ApplyPatchTool {
-    pub async fn call_tool(&self) -> Result<CallToolResult, CallToolError> {
+    pub async fn call_tool(&self) -> Result<CallToolResult, ToolError> {
         let abs_path = resolve_path(&self.path, None);
 
         if !abs_path.exists() {
@@ -47,9 +38,7 @@ impl ApplyPatchTool {
             .map_err(ToolError::Io)?;
 
         let message = format!("Successfully applied patch to {}", abs_path.display());
-        Ok(CallToolResult::text_content(vec![TextContent::from(
-            message,
-        )]))
+        Ok(CallToolResult::success(vec![Content::text(message)]))
     }
 }
 

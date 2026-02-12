@@ -1,22 +1,14 @@
-use rust_mcp_sdk::macros::{mcp_tool, JsonSchema};
-use rust_mcp_sdk::schema::{schema_utils::CallToolError, CallToolResult, TextContent};
-use serde::{Deserialize, Serialize};
+use rmcp::model::{CallToolResult, Content};
 use tokio::fs;
 
 use super::{resolve_path, ToolError};
 
-#[mcp_tool(
-    name = "list_directory",
-    description = "List files and directories in a given directory path"
-)]
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct ListDirectoryTool {
-    /// The path to the directory to list (absolute or relative to working directory)
     pub path: String,
 }
 
 impl ListDirectoryTool {
-    pub async fn call_tool(&self) -> Result<CallToolResult, CallToolError> {
+    pub async fn call_tool(&self) -> Result<CallToolResult, ToolError> {
         let abs_path = resolve_path(&self.path, None);
 
         if !abs_path.exists() {
@@ -55,8 +47,6 @@ impl ListDirectoryTool {
             names.join("\n")
         );
 
-        Ok(CallToolResult::text_content(vec![TextContent::from(
-            content,
-        )]))
+        Ok(CallToolResult::success(vec![Content::text(content)]))
     }
 }

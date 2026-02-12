@@ -1,41 +1,40 @@
-use common_tools::{create_server_details, CommonToolsHandler};
-use rust_mcp_sdk::schema::CallToolRequestParams;
-use rust_mcp_sdk::{
-    mcp_server::{server_runtime, McpServerOptions, ServerHandler, ServerRuntime},
-    StdioTransport, ToMcpServerHandler, TransportOptions,
+use common_tools::CommonToolsServer;
+use rmcp::{
+    model::{CallToolRequestParams, ClientRequest, Request, ServerResult},
+    ClientHandler, ServiceExt,
 };
 use serde_json::json;
-use std::sync::Arc;
 use tempfile::TempDir;
 use tokio::fs;
 
-async fn create_test_server() -> Arc<ServerRuntime> {
-    let server_details = create_server_details();
-    let transport = StdioTransport::new(TransportOptions::default()).unwrap();
-    let handler = CommonToolsHandler {};
+#[derive(Default, Clone)]
+struct TestClient;
 
-    server_runtime::create_server(McpServerOptions {
-        server_details,
-        transport,
-        handler: handler.to_mcp_server_handler(),
-        task_store: None,
-        client_task_store: None,
-    })
-}
+impl ClientHandler for TestClient {}
 
 #[tokio::test]
-async fn test_server_list_tools() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_server_list_tools() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
 
-    let result = handler
-        .handle_list_tools_request(None, server)
-        .await
-        .unwrap();
+    let response = client_service
+        .send_request(ClientRequest::ListToolsRequest(Default::default()))
+        .await?;
+
+    let ServerResult::ListToolsResult(result) = response else {
+        panic!("expected list tools result, got {response:?}");
+    };
 
     assert_eq!(result.tools.len(), 12);
 
-    let tool_names: Vec<&str> = result.tools.iter().map(|t| t.name.as_str()).collect();
+    let tool_names: Vec<&str> = result.tools.iter().map(|t| t.name.as_ref()).collect();
     assert!(tool_names.contains(&"read_file"));
     assert!(tool_names.contains(&"write_file"));
     assert!(tool_names.contains(&"grep"));
@@ -48,12 +47,23 @@ async fn test_server_list_tools() {
     assert!(tool_names.contains(&"search_replace_edit"));
     assert!(tool_names.contains(&"apply_patch"));
     assert!(tool_names.contains(&"task_complete"));
+
+    client_service.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_server_call_read_file_tool() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_server_call_read_file_tool() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
+
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("test.txt");
     let content = "Integration test content";
@@ -61,7 +71,7 @@ async fn test_server_call_read_file_tool() {
     fs::write(&file_path, content).await.unwrap();
 
     let params = CallToolRequestParams {
-        name: "read_file".to_string(),
+        name: "read_file".into(),
         arguments: Some(
             json!({
                 "path": file_path.to_string_lossy()
@@ -74,26 +84,40 @@ async fn test_server_call_read_file_tool() {
         task: None,
     };
 
-    let result = handler
-        .handle_call_tool_request(params, server)
-        .await
-        .unwrap();
+    let response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(params)))
+        .await?;
+
+    let ServerResult::CallToolResult(result) = response else {
+        panic!("expected call tool result, got {response:?}");
+    };
 
     assert_eq!(result.content.len(), 1);
     let content_str = format!("{:?}", result.content[0]);
     assert!(content_str.contains("Integration test content"));
+
+    client_service.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_server_call_write_file_tool() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_server_call_write_file_tool() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
+
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("output.txt");
     let content = "Integration test output";
 
     let params = CallToolRequestParams {
-        name: "write_file".to_string(),
+        name: "write_file".into(),
         arguments: Some(
             json!({
                 "path": file_path.to_string_lossy(),
@@ -107,10 +131,13 @@ async fn test_server_call_write_file_tool() {
         task: None,
     };
 
-    let result = handler
-        .handle_call_tool_request(params, server)
-        .await
-        .unwrap();
+    let response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(params)))
+        .await?;
+
+    let ServerResult::CallToolResult(result) = response else {
+        panic!("expected call tool result, got {response:?}");
+    };
 
     assert_eq!(result.content.len(), 1);
     let content_str = format!("{:?}", result.content[0]);
@@ -119,12 +146,22 @@ async fn test_server_call_write_file_tool() {
 
     let written_content = fs::read_to_string(&file_path).await.unwrap();
     assert_eq!(written_content, content);
+
+    client_service.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_server_call_execute_command_tool() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_server_call_execute_command_tool() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
 
     let command = if cfg!(target_os = "windows") {
         "echo Integration Test"
@@ -133,7 +170,7 @@ async fn test_server_call_execute_command_tool() {
     };
 
     let params = CallToolRequestParams {
-        name: "execute_command".to_string(),
+        name: "execute_command".into(),
         arguments: Some(
             json!({
                 "command": command
@@ -146,20 +183,34 @@ async fn test_server_call_execute_command_tool() {
         task: None,
     };
 
-    let result = handler
-        .handle_call_tool_request(params, server)
-        .await
-        .unwrap();
+    let response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(params)))
+        .await?;
+
+    let ServerResult::CallToolResult(result) = response else {
+        panic!("expected call tool result, got {response:?}");
+    };
 
     assert_eq!(result.content.len(), 1);
     let content_str = format!("{:?}", result.content[0]);
     assert!(content_str.contains("Integration Test"));
+
+    client_service.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_server_call_list_directory_tool() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_server_call_list_directory_tool() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
+
     let temp_dir = TempDir::new().unwrap();
 
     fs::write(temp_dir.path().join("file1.txt"), "content1")
@@ -170,7 +221,7 @@ async fn test_server_call_list_directory_tool() {
         .unwrap();
 
     let params = CallToolRequestParams {
-        name: "list_directory".to_string(),
+        name: "list_directory".into(),
         arguments: Some(
             json!({
                 "path": temp_dir.path().to_string_lossy()
@@ -183,25 +234,38 @@ async fn test_server_call_list_directory_tool() {
         task: None,
     };
 
-    let result = handler
-        .handle_call_tool_request(params, server)
-        .await
-        .unwrap();
+    let response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(params)))
+        .await?;
+
+    let ServerResult::CallToolResult(result) = response else {
+        panic!("expected call tool result, got {response:?}");
+    };
 
     assert_eq!(result.content.len(), 1);
     let content_str = format!("{:?}", result.content[0]);
     assert!(content_str.contains("file1.txt"));
     assert!(content_str.contains("file2.txt"));
     assert!(content_str.contains("2 entries"));
+
+    client_service.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_server_call_now_tool() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_server_call_now_tool() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
 
     let params = CallToolRequestParams {
-        name: "now".to_string(),
+        name: "now".into(),
         arguments: Some(
             json!({
                 "timezone": "utc"
@@ -214,27 +278,41 @@ async fn test_server_call_now_tool() {
         task: None,
     };
 
-    let result = handler
-        .handle_call_tool_request(params, server)
-        .await
-        .unwrap();
+    let response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(params)))
+        .await?;
+
+    let ServerResult::CallToolResult(result) = response else {
+        panic!("expected call tool result, got {response:?}");
+    };
 
     assert_eq!(result.content.len(), 1);
     let content_str = format!("{:?}", result.content[0]);
     assert!(content_str.contains("Current time (utc)"));
     assert!(content_str.contains("T"));
+
+    client_service.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_server_call_task_complete_tool() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_server_call_task_complete_tool() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
 
     let params = CallToolRequestParams {
-        name: "task_complete".to_string(),
+        name: "task_complete".into(),
         arguments: Some(
             json!({
-                "summary": "Integration test completed successfully"
+                "task_id": "test-task-123",
+                "result": "Integration test completed successfully"
             })
             .as_object()
             .unwrap()
@@ -244,40 +322,66 @@ async fn test_server_call_task_complete_tool() {
         task: None,
     };
 
-    let result = handler
-        .handle_call_tool_request(params, server)
-        .await
-        .unwrap();
+    let response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(params)))
+        .await?;
+
+    let ServerResult::CallToolResult(result) = response else {
+        panic!("expected call tool result, got {response:?}");
+    };
 
     assert_eq!(result.content.len(), 1);
     let content_str = format!("{:?}", result.content[0]);
+    assert!(content_str.contains("test-task-123"));
     assert!(content_str.contains("Integration test completed successfully"));
+
+    client_service.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_server_invalid_tool() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_server_invalid_tool() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
 
     let params = CallToolRequestParams {
-        name: "nonexistent_tool".to_string(),
+        name: "nonexistent_tool".into(),
         arguments: Some(json!({}).as_object().unwrap().clone()),
         meta: None,
         task: None,
     };
 
-    let result = handler.handle_call_tool_request(params, server).await;
+    let result = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(params)))
+        .await;
 
     assert!(result.is_err());
+
+    client_service.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_server_tool_with_invalid_arguments() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_server_tool_with_invalid_arguments() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
 
     let params = CallToolRequestParams {
-        name: "read_file".to_string(),
+        name: "read_file".into(),
         arguments: Some(
             json!({
                 "invalid_field": "some_value"
@@ -290,23 +394,35 @@ async fn test_server_tool_with_invalid_arguments() {
         task: None,
     };
 
-    let result = handler.handle_call_tool_request(params, server).await;
+    let result = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(params)))
+        .await;
 
     assert!(result.is_err());
+
+    client_service.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_integration_file_workflow() {
-    let server = create_test_server().await;
-    let handler = CommonToolsHandler {};
+async fn test_integration_file_workflow() -> anyhow::Result<()> {
+    let server = CommonToolsServer::new();
+    let client = TestClient::default();
+    let (server_transport, client_transport) = tokio::io::duplex(8192);
+    let _server_handle = tokio::spawn(async move {
+        let service = server.serve(server_transport).await?;
+        service.waiting().await?;
+        anyhow::Ok(())
+    });
+    let client_service = client.serve(client_transport).await?;
+
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("workflow_test.txt");
     let original_content = "Original content for workflow test";
     let new_content = "Modified content for workflow test";
 
-    // Step 1: Write a file
     let write_params = CallToolRequestParams {
-        name: "write_file".to_string(),
+        name: "write_file".into(),
         arguments: Some(
             json!({
                 "path": file_path.to_string_lossy(),
@@ -320,17 +436,20 @@ async fn test_integration_file_workflow() {
         task: None,
     };
 
-    let write_result = handler
-        .handle_call_tool_request(write_params, server.clone())
-        .await
-        .unwrap();
+    let write_response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(write_params)))
+        .await?;
+
+    let ServerResult::CallToolResult(write_result) = write_response else {
+        panic!("expected call tool result");
+    };
+
     assert_eq!(write_result.content.len(), 1);
     let write_content_str = format!("{:?}", write_result.content[0]);
     assert!(write_content_str.contains("Successfully wrote"));
 
-    // Step 2: Read the file back
     let read_params = CallToolRequestParams {
-        name: "read_file".to_string(),
+        name: "read_file".into(),
         arguments: Some(
             json!({
                 "path": file_path.to_string_lossy()
@@ -343,17 +462,20 @@ async fn test_integration_file_workflow() {
         task: None,
     };
 
-    let read_result = handler
-        .handle_call_tool_request(read_params, server.clone())
-        .await
-        .unwrap();
+    let read_response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(read_params)))
+        .await?;
+
+    let ServerResult::CallToolResult(read_result) = read_response else {
+        panic!("expected call tool result");
+    };
+
     assert_eq!(read_result.content.len(), 1);
     let read_content_str = format!("{:?}", read_result.content[0]);
     assert!(read_content_str.contains("Original content for workflow test"));
 
-    // Step 3: Search and replace in the file
     let edit_params = CallToolRequestParams {
-        name: "search_replace_edit".to_string(),
+        name: "search_replace_edit".into(),
         arguments: Some(
             json!({
                 "path": file_path.to_string_lossy(),
@@ -370,22 +492,24 @@ async fn test_integration_file_workflow() {
         task: None,
     };
 
-    let edit_result = handler
-        .handle_call_tool_request(edit_params, server.clone())
-        .await
-        .unwrap();
+    let edit_response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(edit_params)))
+        .await?;
+
+    let ServerResult::CallToolResult(edit_result) = edit_response else {
+        panic!("expected call tool result");
+    };
+
     assert_eq!(edit_result.content.len(), 1);
     let edit_content_str = format!("{:?}", edit_result.content[0]);
     assert!(edit_content_str.contains("Successfully applied"));
     assert!(edit_content_str.contains("1 edits"));
 
-    // Step 4: Verify the changes
     let final_content = fs::read_to_string(&file_path).await.unwrap();
     assert_eq!(final_content, new_content);
 
-    // Step 5: List the directory to confirm file exists
     let list_params = CallToolRequestParams {
-        name: "list_directory".to_string(),
+        name: "list_directory".into(),
         arguments: Some(
             json!({
                 "path": temp_dir.path().to_string_lossy()
@@ -398,12 +522,19 @@ async fn test_integration_file_workflow() {
         task: None,
     };
 
-    let list_result = handler
-        .handle_call_tool_request(list_params, server)
-        .await
-        .unwrap();
+    let list_response = client_service
+        .send_request(ClientRequest::CallToolRequest(Request::new(list_params)))
+        .await?;
+
+    let ServerResult::CallToolResult(list_result) = list_response else {
+        panic!("expected call tool result");
+    };
+
     assert_eq!(list_result.content.len(), 1);
     let list_content_str = format!("{:?}", list_result.content[0]);
     assert!(list_content_str.contains("workflow_test.txt"));
     assert!(list_content_str.contains("1 entries"));
+
+    client_service.cancel().await?;
+    Ok(())
 }

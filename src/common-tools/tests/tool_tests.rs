@@ -210,13 +210,15 @@ async fn test_search_replace_edit_tool() {
 #[tokio::test]
 async fn test_task_complete_tool() {
     let tool = TaskCompleteTool {
-        summary: "Test task completed successfully".to_string(),
+        task_id: "test-task-123".to_string(),
+        result: "Test task completed successfully".to_string(),
     };
 
     let result = tool.call_tool().await.unwrap();
 
     assert_eq!(result.content.len(), 1);
     let content_str = format!("{:?}", result.content[0]);
+    assert!(content_str.contains("test-task-123"));
     assert!(content_str.contains("Test task completed successfully"));
 }
 

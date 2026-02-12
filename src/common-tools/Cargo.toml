@@ -8,7 +8,7 @@ name = "common-tools"
 path = "src/main.rs"
 
 [dependencies]
-rust-mcp-sdk = { version = "0.8.1", default-features = false, features = ["server", "stdio", "macros"] }
+rmcp = { version = "0.15", features = ["server", "macros", "transport-io", "schemars"] }
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -20,10 +20,11 @@ regex = "1.0"
 glob = "0.3"
 walkdir = "2.3"
 ignore = "0.4"
-async-trait = "0.1"
 thiserror = "1.0"
-rust-mcp-schema = "0.9.4"
+schemars = "1.0"
 
 [dev-dependencies]
 tempfile = "3.0"
 uuid = { version = "1.0", features = ["v4"] }
+rmcp = { version = "0.15", features = ["server", "macros", "transport-io", "schemars", "client"] }
+anyhow = "1.0"

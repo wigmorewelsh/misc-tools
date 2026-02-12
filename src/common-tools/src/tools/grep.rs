@@ -1,8 +1,6 @@
 use ignore::WalkBuilder;
 use regex::Regex;
-use rust_mcp_sdk::macros::{mcp_tool, JsonSchema};
-use rust_mcp_sdk::schema::{schema_utils::CallToolError, CallToolResult, TextContent};
-use serde::{Deserialize, Serialize};
+use rmcp::model::{CallToolResult, Content};
 use std::path::{Path, PathBuf};
 use tokio::fs;
 
@@ -100,24 +98,11 @@ impl SearchConfiguration {
     }
 }
 
-#[mcp_tool(
-    name = "grep",
-    description = "Search file contents using regular expressions"
-)]
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GrepTool {
     pub regex: String,
-
-    #[serde(default)]
     pub include_pattern: Option<String>,
-
-    #[serde(default)]
     pub offset: u32,
-
-    #[serde(default)]
     pub case_sensitive: bool,
-
-    #[serde(default)]
     pub working_directory: Option<String>,
 }
 
@@ -127,14 +112,12 @@ const SAMPLE_SIZE_FOR_TEXT_DETECTION: usize = 8192;
 const NON_TEXT_RATIO_THRESHOLD: f64 = 0.3;
 
 impl GrepTool {
-    pub async fn call_tool(&self) -> Result<CallToolResult, CallToolError> {
-        let config = SearchConfiguration::new(self).map_err(CallToolError::from)?;
+    pub async fn call_tool(&self) -> Result<CallToolResult, ToolError> {
+        let config = SearchConfiguration::new(self)?;
         let found_matches = self.search_files(&config).await;
         let output = self.format_results(&found_matches);
 
-        Ok(CallToolResult::text_content(vec![TextContent::from(
-            output,
-        )]))
+        Ok(CallToolResult::success(vec![Content::text(output)]))
     }
 
     async fn search_files(&self, config: &SearchConfiguration) -> Vec<FileMatch> {

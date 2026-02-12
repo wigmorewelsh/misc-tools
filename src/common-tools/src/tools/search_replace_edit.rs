@@ -1,11 +1,10 @@
-use rust_mcp_sdk::macros::{mcp_tool, JsonSchema};
-use rust_mcp_sdk::schema::{schema_utils::CallToolError, CallToolResult, TextContent};
+use rmcp::model::{CallToolResult, Content};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use super::{resolve_path, ToolError};
 
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+#[derive(Debug, Deserialize, Serialize, schemars::JsonSchema)]
 pub struct EditOperation {
     /// The text to search for. Can include multiple lines and doesn't need exact whitespace matching.
     pub search: String,
@@ -13,20 +12,13 @@ pub struct EditOperation {
     pub replace: String,
 }
 
-#[mcp_tool(
-    name = "search_replace_edit",
-    description = "Perform intelligent search and replace operations on a file. Supports multiple edits and fuzzy matching for whitespace differences."
-)]
-#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct SearchReplaceEditTool {
-    /// The path to the file to edit (absolute or relative to working directory)
     pub path: String,
-    /// List of search and replace operations to perform
     pub edits: Vec<EditOperation>,
 }
 
 impl SearchReplaceEditTool {
-    pub async fn call_tool(&self) -> Result<CallToolResult, CallToolError> {
+    pub async fn call_tool(&self) -> Result<CallToolResult, ToolError> {
         let abs_path = resolve_path(&self.path, None);
 
         if !abs_path.exists() {
@@ -45,9 +37,7 @@ impl SearchReplaceEditTool {
             self.edits.len(),
             abs_path.display()
         );
-        Ok(CallToolResult::text_content(vec![TextContent::from(
-            message,
-        )]))
+        Ok(CallToolResult::success(vec![Content::text(message)]))
     }
 }
 

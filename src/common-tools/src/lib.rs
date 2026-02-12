@@ -1,5 +1,5 @@
 pub mod server;
 pub mod tools;
 
-pub use server::*;
+pub use server::CommonToolsServer;
 pub use tools::*;
