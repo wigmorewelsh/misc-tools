@@ -6,6 +6,9 @@ license = "MIT"
 repository = "https://github.com/wigmorewelsh/mcp-tools"
 publish = false
 
+[package.metadata.dist]
+dist = true
+
 [[bin]]
 name = "common-tools"
 path = "src/main.rs"
