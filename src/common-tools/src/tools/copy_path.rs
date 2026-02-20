@@ -15,7 +15,7 @@ impl CopyPathTool {
         let dest_abs = resolve_path(&self.destination_path, None);
 
         if !source_abs.exists() {
-            return Err(ToolError::FileNotFound(source_abs.display().to_string()).into());
+            return Err(ToolError::FileNotFound(source_abs.display().to_string()));
         }
 
         if source_abs.is_dir() {

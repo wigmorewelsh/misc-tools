@@ -15,7 +15,7 @@ impl ClientHandler for TestClient {}
 #[tokio::test]
 async fn test_server_list_tools() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;
@@ -55,7 +55,7 @@ async fn test_server_list_tools() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_server_call_read_file_tool() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;
@@ -103,7 +103,7 @@ async fn test_server_call_read_file_tool() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_server_call_write_file_tool() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;
@@ -154,7 +154,7 @@ async fn test_server_call_write_file_tool() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_server_call_execute_command_tool() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;
@@ -202,7 +202,7 @@ async fn test_server_call_execute_command_tool() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_server_call_list_directory_tool() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;
@@ -255,7 +255,7 @@ async fn test_server_call_list_directory_tool() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_server_call_now_tool() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;
@@ -298,7 +298,7 @@ async fn test_server_call_now_tool() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_server_call_task_complete_tool() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;
@@ -342,7 +342,7 @@ async fn test_server_call_task_complete_tool() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_server_invalid_tool() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;
@@ -371,7 +371,7 @@ async fn test_server_invalid_tool() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_server_tool_with_invalid_arguments() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;
@@ -407,7 +407,7 @@ async fn test_server_tool_with_invalid_arguments() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_integration_file_workflow() -> anyhow::Result<()> {
     let server = CommonToolsServer::new();
-    let client = TestClient::default();
+    let client = TestClient;
     let (server_transport, client_transport) = tokio::io::duplex(8192);
     let _server_handle = tokio::spawn(async move {
         let service = server.serve(server_transport).await?;

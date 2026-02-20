@@ -15,8 +15,7 @@ impl CreateDirectoryTool {
             return Err(ToolError::InvalidArgument(format!(
                 "A file already exists at path: {}",
                 abs_path.display()
-            ))
-            .into());
+            )));
         }
 
         fs::create_dir_all(&abs_path).await.map_err(|e| {

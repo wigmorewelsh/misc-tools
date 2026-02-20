@@ -14,7 +14,7 @@ impl NowTool {
                 let now: DateTime<Utc> = Utc::now();
                 (now.to_rfc3339(), "utc")
             }
-            "local" | _ => {
+            _ => {
                 let now: DateTime<Local> = Local::now();
                 (now.to_rfc3339(), "local")
             }

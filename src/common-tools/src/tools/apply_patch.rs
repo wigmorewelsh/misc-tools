@@ -13,7 +13,7 @@ impl ApplyPatchTool {
         let abs_path = resolve_path(&self.path, None);
 
         if !abs_path.exists() {
-            return Err(ToolError::FileNotFound(abs_path.display().to_string()).into());
+            return Err(ToolError::FileNotFound(abs_path.display().to_string()));
         }
 
         let original_content = fs::read_to_string(&abs_path).await.map_err(ToolError::Io)?;
@@ -113,7 +113,7 @@ fn parse_unified_diff(patch_lines: &[&str]) -> Option<Vec<HunkData>> {
                 continue;
             }
 
-            let ranges: Vec<&str> = parts[1].trim().split_whitespace().collect();
+            let ranges: Vec<&str> = parts[1].split_whitespace().collect();
             if ranges.len() < 2 {
                 i += 1;
                 continue;
@@ -142,15 +142,12 @@ fn parse_unified_diff(patch_lines: &[&str]) -> Option<Vec<HunkData>> {
 
             while i < patch_lines.len() && !patch_lines[i].starts_with("@@") {
                 let hunk_line = patch_lines[i];
-                if hunk_line.starts_with(' ') {
-                    let content = &hunk_line[1..];
+                if let Some(content) = hunk_line.strip_prefix(' ') {
                     context_and_removed.push(content.to_string());
                     new_lines.push(content.to_string());
-                } else if hunk_line.starts_with('-') {
-                    let content = &hunk_line[1..];
+                } else if let Some(content) = hunk_line.strip_prefix('-') {
                     context_and_removed.push(content.to_string());
-                } else if hunk_line.starts_with('+') {
-                    let content = &hunk_line[1..];
+                } else if let Some(content) = hunk_line.strip_prefix('+') {
                     new_lines.push(content.to_string());
                 } else if hunk_line.starts_with('\\') {
                     // "No newline at end of file" marker - skip

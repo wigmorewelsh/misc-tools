@@ -48,8 +48,7 @@ impl ExecuteCommandTool {
                 "Command failed with exit code {}: {}",
                 output.status.code().unwrap_or(-1),
                 result
-            ))
-            .into());
+            )));
         }
 
         Ok(CallToolResult::success(vec![Content::text(result)]))
