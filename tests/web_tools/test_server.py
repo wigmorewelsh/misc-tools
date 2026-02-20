@@ -28,7 +28,7 @@ async def test_list_tools(web_tools_client: Client[FastMCPTransport]):
 
 async def test_websearch_success(web_tools_client: Client[FastMCPTransport]):
     mock_result = MagicMock()
-    mock_result.stdout = "Search result 1\nSearch result 2\nSearch result 3"
+    mock_result.stdout = b"Search result 1\nSearch result 2\nSearch result 3"
 
     with patch("server.subprocess.run", return_value=mock_result):
         result = await web_tools_client.call_tool(
@@ -65,7 +65,8 @@ async def test_websearch_lynx_not_installed(web_tools_client: Client[FastMCPTran
 
 async def test_fetch_success(web_tools_client: Client[FastMCPTransport]):
     mock_result = MagicMock()
-    mock_result.stdout = "Page content\nMore content"
+    mock_result.stdout = b"Page content\nMore content"
+    mock_result.returncode = 0
 
     with patch("server.subprocess.run", return_value=mock_result):
         result = await web_tools_client.call_tool(
